@@ -1,0 +1,116 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define TABLE_SIZE 100
+
+typedef struct Symbol {
+	char *name;
+	int value;
+	struct Symbol *next;
+} Symbol;
+
+Symbol *symbol_table[TABLE_SIZE];
+
+unsigned int hash(const char *str) {
+	unsigned int hash = 0;
+	while (*str) {
+    	hash = (hash << 5) + *str++;
+	}
+	return hash % TABLE_SIZE;
+}
+
+Symbol* create_symbol(const char *name, int value) {
+	Symbol *symbol = (Symbol *)malloc(sizeof(Symbol));
+	symbol->name = strdup(name);
+	symbol->value = value;
+	symbol->next = NULL;
+	return symbol;
+}
+
+void insert(const char *name, int value) {
+	unsigned int index = hash(name);
+	Symbol *symbol = symbol_table[index];
+	while (symbol) {
+    	if (strcmp(symbol->name, name) == 0) {
+        	symbol->value = value;
+        	return;
+    	}
+    	symbol = symbol->next;
+	}
+	symbol = create_symbol(name, value);
+	symbol->next = symbol_table[index];
+	symbol_table[index] = symbol;
+}
+
+Symbol* search(const char *name) {
+	unsigned int index = hash(name);
+	Symbol *symbol = symbol_table[index];
+	while (symbol) {
+    	if (strcmp(symbol->name, name) == 0) {
+        	return symbol;
+    	}
+    	symbol = symbol->next;
+	}
+	return NULL;
+}
+
+void delete(const char *name) {
+	unsigned int index = hash(name);
+	Symbol *symbol = symbol_table[index];
+	Symbol *prev = NULL;
+	while (symbol) {
+    	if (strcmp(symbol->name, name) == 0) {
+        	if (prev) {
+            	prev->next = symbol->next;
+        	} else {
+            	symbol_table[index] = symbol->next;
+        	}
+        	free(symbol->name);
+        	free(symbol);
+        	return;
+    	}
+    	prev = symbol;
+    	symbol = symbol->next;
+	}
+}
+
+void modify(const char *name, int new_value) {
+	Symbol *symbol = search(name);
+	if (symbol) {
+    	symbol->value = new_value;
+	} else {
+    	printf("Symbol not found: %s\n", name);
+	}
+}
+
+void print_symbol_table() {
+	for (int i = 0; i < TABLE_SIZE; i++) {
+    	Symbol *symbol = symbol_table[i];
+    	while (symbol) {
+        	printf("Name: %s, Value: %d\n", symbol->name, symbol->value);
+        	symbol = symbol->next;
+    	}
+	}
+}
+
+int main() {
+	// Example usage
+	insert("x", 10);
+	insert("y", 20);
+
+	print_symbol_table();
+
+	Symbol *s = search("x");
+	if (s) {
+    	printf("Found symbol x with value %d\n", s->value);
+	}
+
+	modify("x", 30);
+	delete("y");
+
+	print_symbol_table();
+
+	return 0;
+}
+
